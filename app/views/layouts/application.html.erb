@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OrchestraLab</title>
+  <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track' => true %>
+  <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
+  <%= csrf_meta_tags %>
+</head>
+<body>
+  <header class="global-header">
+      <nav id="global-nav">
+        <a href="http://localhost:3000" id="logo-s">Amadeus</a>
+        <ul>
+          <li><a href="" title="">ログイン</a></li>
+          <li><a href="" title="">リンク</a></li>
+        </ul>
+      </nav>
+  </header>
+
+<%= yield %>
+
+</body>
+</html>

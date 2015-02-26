@@ -1,0 +1,21 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: MyString
+  name2: MyString
+  name3: MyString
+  name4: MyString
+  name5: MyString
+  role_id: 1
+  instrument_id: 1
+  image_url: MyString
+
+two:
+  name: MyString
+  name2: MyString
+  name3: MyString
+  name4: MyString
+  name5: MyString
+  role_id: 1
+  instrument_id: 1
+  image_url: MyString
