@@ -1,4 +1,5 @@
-class Scraping#音友コンサートガイドhttp://www.ongakunotomo.co.jp/concert/の検索欄に新日本フィルハーモニー交響楽団というキーワードを入れる。
+class Scraping
+#音友コンサートガイドhttp://www.ongakunotomo.co.jp/concert/の検索欄に新日本フィルハーモニー交響楽団というキーワードを入れる。
 #スクレイピングするとき、オーケストラとかこんさーとテーブルに入っていない情報だったら、テーブルに追加して、テーブルの一番最後（つまり今とってきたやつ）のidを返り値として返す。もし入っていたら、そのidを返す。    first_or_initializeはorchestra,title,day,timeで当てる。
 #最後に、コンサートをまとめて保存。
   require 'mechanize'
@@ -24,7 +25,7 @@ class Scraping#音友コンサートガイドhttp://www.ongakunotomo.co.jp/conce
     while true do
       infoboxes = response.search('.listSummary')
       infoboxes.each do |box|
-        links << box.at('.box3 a').get_attribute('href') if (box.at('.box2').inner_text === '東京' || box.at('.box2').inner_tex=== '神奈川' ) && !box.at('.box1').inner_text.empty?
+        links << box.at('.box3 a').get_attribute('href') if (box.at('.box2').inner_text === '東京' || box.at('.box2').inner_text === '神奈川' ) && !box.at('.box1').inner_text.empty?
       end
       if response.at('.next').nil?
         break

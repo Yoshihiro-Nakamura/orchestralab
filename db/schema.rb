@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150317103627) do
+ActiveRecord::Schema.define(version: 20150318124926) do
 
   create_table "artists", force: :cascade do |t|
     t.string   "artist_name",    limit: 255
@@ -20,7 +20,7 @@ ActiveRecord::Schema.define(version: 20150317103627) do
     t.string   "name4",          limit: 255
     t.string   "name5",          limit: 255
     t.string   "role",           limit: 255
-    t.string   "inst_id",        limit: 255
+    t.string   "instrument_id",  limit: 255
     t.string   "image_url",      limit: 255
     t.datetime "created_at",                 null: false
     t.datetime "updated_at",                 null: false
@@ -37,17 +37,25 @@ ActiveRecord::Schema.define(version: 20150317103627) do
     t.date     "day"
     t.time     "time"
     t.integer  "place_id",        limit: 4
-    t.integer  "orch_id",         limit: 4
+    t.integer  "orchestra_id",    limit: 4
     t.string   "tag",             limit: 255
     t.string   "price",           limit: 255
     t.string   "contact_name",    limit: 255
     t.string   "contact_number",  limit: 255
     t.datetime "created_at",                  null: false
     t.datetime "updated_at",                  null: false
-    t.string   "cond_id",         limit: 255
+    t.integer  "conductor_id",    limit: 4
     t.string   "content",         limit: 700
     t.string   "another_content", limit: 255
     t.string   "title_name_en",   limit: 255
+  end
+
+  create_table "conductors", force: :cascade do |t|
+    t.string   "cond_name",    limit: 255
+    t.string   "image_url",    limit: 255
+    t.string   "cond_name_en", limit: 255
+    t.datetime "created_at",               null: false
+    t.datetime "updated_at",               null: false
   end
 
   create_table "instruments", force: :cascade do |t|

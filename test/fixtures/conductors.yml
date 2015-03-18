@@ -1,0 +1,11 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  cond_name: MyString
+  image_url: MyString
+  cond_name_en: MyString
+
+two:
+  cond_name: MyString
+  image_url: MyString
+  cond_name_en: MyString
