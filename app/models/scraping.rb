@@ -3,6 +3,7 @@ class Scraping
 #スクレイピングするとき、オーケストラとかこんさーとテーブルに入っていない情報だったら、テーブルに追加して、テーブルの一番最後（つまり今とってきたやつ）のidを返り値として返す。もし入っていたら、そのidを返す。    first_or_initializeはorchestra,title,day,timeで当てる。
 #最後に、コンサートをまとめて保存。
   require 'mechanize'
+  require 'moji'
 
   def get_orchestras
     orchestras = %W(東京都交響楽団 東京フィルハーモニー交響楽団 東京交響楽団 読売日本交響楽団 新日本フィルハーモニー交響楽団 日本フィルハーモニー交響楽団)
@@ -49,14 +50,21 @@ class Scraping
 
 
   def get_concert(links)
-
+    artist_ids = []         #最後に中間テーブルに保存したいので、idを配列で保持
     agent = Mechanize.new
     page = agent.get('http://search.ebravo.jp' + links)
+    #コンサートのタイトルを取得
     title = page.search('h2').inner_text
+    #公演日を取得     Date型に変換して入れる。
     day = page.search('.w290 p').inner_text
     #advance_sale_day = page.search('.w280 p').inner_text if page.search('.w280 p')
+    # 開演時間を取得     time型にしていれる。
     time = page.search('tr[2] td[2] p').inner_text
+    # 公演場所を取得
     place_name = page.search('tr[3] td[2] p').inner_text
+    place = Place.where(:place_name artist_name).first_or_initialize
+    place.save
+    place_id = place.id
     # ここまでは全て共通
     concert_elements = page.search('tr[4] p')  #公演情報のpタグをとる。
     texts = []                                 #公演情報をそれぞれ文字列にして入れる配列
@@ -79,18 +87,22 @@ class Scraping
         #ここまでは、<p>の中に／がひとつだけのもの。以下はそれ以外で
       else
         elements = text.split("　")      #<p>タグの中身を全角スペースのところで区切って配列に入れる。
-        artist_ids = []         #コンサートテーブルに必要なartist_idを入れる配列
         elements.each do |ele|
           if ele[0] == "合"
             choruses = ele.split("／", 2)[1].split
             choruses.each do |chor|
               artist_name = chor
+              instrument_id = 1
               artist = Artist.where(artist_name: artist_name).first_or_initialize
               artist.save
               artist_ids << artist.id
             end
             role = "合唱"      #これどうする？
-          elsif ele[0] == "独"
+          elsif ele[0] == "演"
+              artist_name = ele.split("／", 2)[1]
+              role = "演出"
+
+          elsif ele[0] == "独" || ele[0] == "共" || ele[0] == "出"          #この３つは同じみたい
             artists = ele.split("／", 2)[1].split      #独は複数いる場合があるので、／で割って、さらに空白で割る。
             artists.each do |art|
               if art[0] == "他"     #eleの中身が"出／古部賢一ob 他"みたいなときの処理。とりあえず後回し（共のとこも同じ）。
@@ -101,61 +113,42 @@ class Scraping
                 #もう一回考える。まずInstrumentalテーブルに保存してから、idをとってくる。
                 instrument = Instrument.where(short_name: short_name)first_or_initialize
                 instrument.save
-                inst_id = instrument.id
+                instrument_id = instrument.id
                 artist = Artist.where(artist_name: artist_name).first_or_initialize
                 artist.save
                 role = "共演者"
                 artist_ids << artist.id
               end
             end
-           elsif ele[0] == "指"
-            role = "指揮者"
-            artist_name = ele.split("／", 2)[1]
-            artist = Artist.where(artist_name: artist_name)first_or_initialize
-            artist.save
-            cond_id = artist.id
+          elsif ele[0] == "指"
+            # role = "指揮者"
+            cond_name = ele.split("／", 2)[1]
+            conductor = Conductor.where(cond_name: cond_name)first_or_initialize
+            conductor.save
+            cond_id = conductor.id
           elsif ele[0] == "管"
             #何もしない
-          elsif ele[0] == "共"
-            #処理
-            artists = ele.split("／", 2)[1].split      #独は複数いる場合があるので、／で割って、さらに空白で割る。
-            artists.each do |art|
-              if art[0] == "他"     #eleの中身が"出／古部賢一ob 他"みたいなときの処理。とりあえず後回し（共のとこも同じ）。
-                #現状何もしない
-              else
-                role = "共演者"
-                artist_name = art.scan(/[^a-zA-ZＡ-Ｚ]/).join  #アルファベット以外の文字列を配列で取り、連結。
-                short_name = art.scan(/[a-zA-ZＡ-Ｚ]/).join  #これは、obとかvlnとか。アルファベットの文字列を配列で取り、連結。
-                #もう一回考える。まずInstrumentalテーブルに保存してから、idをとってくる。
-                instrument = Instrument.where(short_name: short_name).first_or_initialize
-                instrument.save
-                inst_id = instrument.id
-                artist = Artist.where(artist_name: artist_name).first_or_initialize
-                artist.save
-                artist_ids << artist.id
-              end
-            end
           elsif ele[0] == "司"
             #処理現状とりあえずroleは共演
-            role = "共演者"
+            role = "司会"
             artist_name= ele.split("／", 2)[1].split
             artist = Artist.where(artist_name: artist_name).first_or_initialize
             artist.save
             artist_ids << artist.id
-          elsif ele[0]"出"
-            #出の場合、楽器名がないのでとりあえず名前だけ保存
-            artists = ele.split("／", 2)[1].split
-            artists.each do |art|
-              if art[0] == "他"
-                #現状何もしない
-              else
-                role = "共演者"
-                artist_name = art
-                artist = Artist.where(artist_name: artist_name).first_or_initialize
-                artist.save
-                artist_ids << artist.id
-              end
-            end
+          # elsif ele[0]"出"
+          #   #出の場合、楽器名がないのでとりあえず名前だけ保存
+          #   artists = ele.split("／", 2)[1].split
+          #   artists.each do |art|
+          #     if art[0] == "他"
+          #       #現状何もしない
+          #     else
+          #       role = "共演者"
+          #       artist_name = art
+          #       artist = Artist.where(artist_name: artist_name).first_or_initialize
+          #       artist.save
+          #       artist_ids << artist.id
+          #     end
+          #   end
           end
         end
       end

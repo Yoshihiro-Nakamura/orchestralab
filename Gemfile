@@ -47,3 +47,4 @@ gem 'pry-rails'
 gem 'compass-rails'
 gem 'sprockets', '2.11.0'
 gem 'mechanize'
+gem "moji"
