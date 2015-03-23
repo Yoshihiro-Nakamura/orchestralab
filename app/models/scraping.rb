@@ -4,6 +4,7 @@ class Scraping
 #最後に、コンサートをまとめて保存。
   require 'mechanize'
   require 'moji'
+  require 'date'
 
   def get_orchestras
     orchestras = %W(東京都交響楽団 東京フィルハーモニー交響楽団 東京交響楽団 読売日本交響楽団 新日本フィルハーモニー交響楽団 日本フィルハーモニー交響楽団)
@@ -42,21 +43,24 @@ class Scraping
       end
     else
       links.each do |link|
-        get_concert(link)
+        get_concert(link, @orchestraname)
       end
     end
 
   end
 
 
-  def get_concert(links)
+  def get_concert(links, orchestra)
+
     artist_ids = []         #最後に中間テーブルに保存したいので、idを配列で保持
     agent = Mechanize.new
     page = agent.get('http://search.ebravo.jp' + links)
     #コンサートのタイトルを取得
     title = page.search('h2').inner_text
     #公演日を取得     Date型に変換して入れる。
-    day = page.search('.w290 p').inner_text
+    day_str = page.search('.w290 p').inner_text
+    # Date型にするため、dateライブラリのメソッドを使用
+    day = Date.strptime(day_str, "%Y/%m/%d")
     #advance_sale_day = page.search('.w280 p').inner_text if page.search('.w280 p')
     # 開演時間を取得     time型にしていれる。
     time = page.search('tr[2] td[2] p').inner_text
@@ -71,7 +75,12 @@ class Scraping
     concert_elements.each do |ele|             #その処理。
       texts << ele.inner_text
     end
-
+    # 変数の初期化をして、変数がブロックローカルになるのを避ける
+    price = nil
+    contact_name = nil
+    contact_number = nil
+    another_content = nil
+    cond_id = 0
     texts.each do |text|
       if text[0] == "料"
         price = text.split("／")[1]
@@ -152,11 +161,10 @@ class Scraping
           end
         end
       end
-      place = Place.where(place_name: place_name).first_or_initialize
-      place.save
-      place_id = place.id
-      # ここでコンサートテーブルのレコードを保存
     end
+    concert = Concert.where(day: day, time: time, place_id: place_id)
+    concert.save
+
   end
 
 

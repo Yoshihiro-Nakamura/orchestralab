@@ -1,4 +1,25 @@
+*= require bootstrap
 
+* {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #F4F4F4;
+  font-family: "Lucida Grande","Helvetica Neue",Verdana,Arial,"ヒラギノ角ゴ Pro W3","Hiragino Kaku Gothic Pro","メイリオ",Meiryo,"ＭＳ Ｐゴシック","ＭＳ ゴシック","Kozuka Gothic Pr6N",Osaka,"MS PGothic",sans-serif;
+  height: 100%;
+  line-height: 150%;   /*行間隔の指定*/
+  color: rgba(0,0,0,0.9);   /*文字色をちょい薄めで指定*/
+}
+
+.global-header {
+  background: #2c2c2c;
+}
+
+a {
+  color: #5A5D58;
+}
 
 
 /*

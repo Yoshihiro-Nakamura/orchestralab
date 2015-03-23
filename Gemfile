@@ -48,3 +48,7 @@ gem 'compass-rails'
 gem 'sprockets', '2.11.0'
 gem 'mechanize'
 gem "moji"
+gem 'less-rails'
+gem 'therubyracer'
+gem 'execjs'
+gem 'twitter-bootstrap-rails'

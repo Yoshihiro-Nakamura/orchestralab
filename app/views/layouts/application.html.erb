@@ -7,17 +7,43 @@
   <%= csrf_meta_tags %>
 </head>
 <body>
-  <header class="global-header">
-      <nav id="global-nav">
-        <a href="http://localhost:3000" id="logo-s">Amadeus</a>
-        <ul>
-          <li><a href="" title="">ログイン</a></li>
-          <li><a href="" title="">リンク</a></li>
-        </ul>
-      </nav>
-  </header>
+<div id="wrapper">
 
+  <!-- Sidebar -->
+  <div id="sidebar-wrapper">
+      <ul class="sidebar-nav">
+          <li class="sidebar-brand">
+              <a href="#">
+                  Orchestra.navi
+              </a>
+          </li>
+          <li>
+              <a href="#">東京交響楽団</a>
+          </li>
+          <li>
+              <a href="#">NHK交響楽団</a>
+          </li>
+          <li>
+              <a href="#">新日本フィルハーモニー交響楽団</a>
+          </li>
+          <li>
+              <a href="#">日本フィルハーモニー交響楽団</a>
+          </li>
+          <li>
+              <a href="#">東京フィルハーモニー交響楽団</a>
+          </li>
+          <li>
+              <a href="#">東京シティ・フィルハーモニック</a>
+          </li>
+          <li>
+              <a href="#">読売日本交響楽団</a>
+          </li>
+          <li>
+              <a href="#">東京都交響楽団</a>
+          </li>
+      </ul>
+  </div>
 <%= yield %>
-
+</div>
 </body>
 </html>
