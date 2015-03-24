@@ -4,16 +4,16 @@ class Scraping
 #最後に、コンサートをまとめて保存。
   require 'mechanize'
   require 'moji'
-  require 'date'
+  require 'time'
 
-  def get_orchestras
-    orchestras = %W(東京都交響楽団 東京フィルハーモニー交響楽団 東京交響楽団 読売日本交響楽団 新日本フィルハーモニー交響楽団 日本フィルハーモニー交響楽団)
+  def self.get_orchestras
+    orchestras = %W(東京交響楽団)
     orchestras.each do |orch|
-      get_concerts(orch)
+      self.get_concerts(orch)
     end
   end
 
-  def get_concerts(keywords)
+  def self.get_concerts(keywords)
 
     @orchestraname = keywords
     links = []
@@ -39,34 +39,33 @@ class Scraping
 
     if @orchestraname == "日本フィルハーモニー交響楽団"
       links.each do |link|
-        get_jpo_concert(link)
+        self.get_jpo_concert(link, @orchestraname)
       end
     else
       links.each do |link|
-        get_concert(link, @orchestraname)
+        self.get_concert(link, @orchestraname)
       end
     end
-
   end
 
 
-  def get_concert(links, orchestra)
-
+  def self.get_concert(links, orchestra)
     artist_ids = []         #最後に中間テーブルに保存したいので、idを配列で保持
     agent = Mechanize.new
     page = agent.get('http://search.ebravo.jp' + links)
     #コンサートのタイトルを取得
     title = page.search('h2').inner_text
-    #公演日を取得     Date型に変換して入れる。
-    day_str = page.search('.w290 p').inner_text
-    # Date型にするため、dateライブラリのメソッドを使用
-    day = Date.strptime(day_str, "%Y/%m/%d")
+    #公演日を取得
+    day = page.search('.w290 p').inner_text
     #advance_sale_day = page.search('.w280 p').inner_text if page.search('.w280 p')
-    # 開演時間を取得     time型にしていれる。
+    # 開演時間を取得
     time = page.search('tr[2] td[2] p').inner_text
+    # timeとdayをくっつけて、time型に変換
+    date_and_time = day + time
+    datetime = Time.parse(date_and_time)
     # 公演場所を取得
     place_name = page.search('tr[3] td[2] p').inner_text
-    place = Place.where(:place_name artist_name).first_or_initialize
+    place = Place.where(place_name: place_name).first_or_initialize
     place.save
     place_id = place.id
     # ここまでは全て共通
@@ -80,13 +79,14 @@ class Scraping
     contact_name = nil
     contact_number = nil
     another_content = nil
-    cond_id = 0
+    content = nil
+    conductor_id = 0
     texts.each do |text|
       if text[0] == "料"
         price = text.split("／")[1]
       elsif text[0] == "問"
-        contact_texts = text.split("／", 2)[1]#まず／で分割して"問／"を除く
-        contact_text = contact_texts.split[0]     #複数は厄介だから最初のだけ
+        contact_text = text.split("／", 2)[1]#まず／で分割して"問／"を除く
+        #contact_text = contact_texts.split[0]     #複数は厄介だから最初のだけ
         contact_name = contact_text.split("0")[0]       #市街局番の０をキーにして電話番号と名前を分割。ここでは問い合わせ先をcontact_nameに。
         contact_number = "0" + contact_text.split("0", 2)[1]         #電話番号は分割に使った0を先頭につけたして。
       elsif text[0] == "※"
@@ -95,7 +95,7 @@ class Scraping
         content = text.split("／", 2)[1]
         #ここまでは、<p>の中に／がひとつだけのもの。以下はそれ以外で
       else
-        elements = text.split("　")      #<p>タグの中身を全角スペースのところで区切って配列に入れる。
+        elements = text.split("　")      #<p>タグの中身を全角スペースのところで区切って配列に入れる.
         elements.each do |ele|
           if ele[0] == "合"
             choruses = ele.split("／", 2)[1].split
@@ -110,7 +110,6 @@ class Scraping
           elsif ele[0] == "演"
               artist_name = ele.split("／", 2)[1]
               role = "演出"
-
           elsif ele[0] == "独" || ele[0] == "共" || ele[0] == "出"          #この３つは同じみたい
             artists = ele.split("／", 2)[1].split      #独は複数いる場合があるので、／で割って、さらに空白で割る。
             artists.each do |art|
@@ -120,10 +119,10 @@ class Scraping
                 artist_name = art.scan(/[^a-zA-ZＡ-Ｚ]/).join  #アルファベット以外の文字列を配列で取り、連結。
                 short_name = art.scan(/[a-zA-ZＡ-Ｚ]/).join  #これは、obとかvlnとか。アルファベットの文字列を配列で取り、連結。
                 #もう一回考える。まずInstrumentalテーブルに保存してから、idをとってくる。
-                instrument = Instrument.where(short_name: short_name)first_or_initialize
+                instrument = Instrument.where(short_name: short_name).first_or_initialize
                 instrument.save
                 instrument_id = instrument.id
-                artist = Artist.where(artist_name: artist_name).first_or_initialize
+                artist = Artist.where(artist_name: artist_name, instrument_id: instrument_id).first_or_initialize
                 artist.save
                 role = "共演者"
                 artist_ids << artist.id
@@ -132,47 +131,36 @@ class Scraping
           elsif ele[0] == "指"
             # role = "指揮者"
             cond_name = ele.split("／", 2)[1]
-            conductor = Conductor.where(cond_name: cond_name)first_or_initialize
+            conductor = Conductor.where(cond_name: cond_name).first_or_initialize
             conductor.save
-            cond_id = conductor.id
+            conductor_id = conductor.id
           elsif ele[0] == "管"
             #何もしない
           elsif ele[0] == "司"
             #処理現状とりあえずroleは共演
             role = "司会"
-            artist_name= ele.split("／", 2)[1].split
+            artist_name = ele.split("／", 2)[1].split
             artist = Artist.where(artist_name: artist_name).first_or_initialize
             artist.save
             artist_ids << artist.id
-          # elsif ele[0]"出"
-          #   #出の場合、楽器名がないのでとりあえず名前だけ保存
-          #   artists = ele.split("／", 2)[1].split
-          #   artists.each do |art|
-          #     if art[0] == "他"
-          #       #現状何もしない
-          #     else
-          #       role = "共演者"
-          #       artist_name = art
-          #       artist = Artist.where(artist_name: artist_name).first_or_initialize
-          #       artist.save
-          #       artist_ids << artist.id
-          #     end
-          #   end
           end
         end
       end
     end
-    concert = Concert.where(day: day, time: time, place_id: place_id)
+    orch = Orchestra.find_by(orch_name: orchestra)
+    orchestra_id = orch.id
+    concert = Concert.where(title: title, conductor_id: conductor_id, content: content, datetime: datetime, place_id: place_id, contact_name: contact_name, contact_number: contact_number, orchestra_id: orchestra_id).first_or_initialize
     concert.save
-
+    artist_ids.each do |a_id|
+      artist_id = a_id
+      concert_id = concert.id
+      artist_concert = ArtistsConcert.where(artist_id: artist_id, concert_id: concert_id).first_or_initialize
+      artist_concert.save
+    end
   end
 
 
-
-
-
-
-  def get_jpo_concert(links)
+  def self.get_jpo_concert(links)
     agent = Mechanize.new
     page = agent.get('http://search.ebravo.jp' + links)
     njp_key_title = page.at('#detail_area h2').inner_text     #新日本フィルかどうか判定するためタイトルをとる
@@ -237,7 +225,5 @@ class Scraping
         end
       end
     end
-
   end
-
 end
