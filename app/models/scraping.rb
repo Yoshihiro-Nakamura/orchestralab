@@ -7,7 +7,7 @@ class Scraping
   require 'time'
 
   def self.get_orchestras
-    orchestras = %W(東京交響楽団)
+    orchestras = %W(NHK交響楽団 新日本フィルハーモニー交響楽団 日本フィルハーモニー交響楽団)
     orchestras.each do |orch|
       self.get_concerts(orch)
     end
@@ -102,7 +102,7 @@ class Scraping
             choruses.each do |chor|
               artist_name = chor
               instrument_id = 1
-              artist = Artist.where(artist_name: artist_name).first_or_initialize
+              artist = Artist.where(artist_name: artist_name, instrument_id: instrument_id).first_or_initialize
               artist.save
               artist_ids << artist.id
             end
@@ -117,7 +117,8 @@ class Scraping
                 #現状何もしない
               else
                 artist_name = art.scan(/[^a-zA-ZＡ-Ｚ]/).join  #アルファベット以外の文字列を配列で取り、連結。
-                short_name = art.scan(/[a-zA-ZＡ-Ｚ]/).join  #これは、obとかvlnとか。アルファベットの文字列を配列で取り、連結。
+                short_name_origin = art.scan(/[a-zA-ZＡ-Ｚ]/).join  #これは、obとかvlnとか。アルファベットの文字列を配列で取り、連結。
+                short_name = Moji.zen_to_han(short_name_origin).downcase
                 #もう一回考える。まずInstrumentalテーブルに保存してから、idをとってくる。
                 instrument = Instrument.where(short_name: short_name).first_or_initialize
                 instrument.save
@@ -149,7 +150,7 @@ class Scraping
     end
     orch = Orchestra.find_by(orch_name: orchestra)
     orchestra_id = orch.id
-    concert = Concert.where(title: title, conductor_id: conductor_id, content: content, datetime: datetime, place_id: place_id, contact_name: contact_name, contact_number: contact_number, orchestra_id: orchestra_id).first_or_initialize
+    concert = Concert.where(title: title, price: price, conductor_id: conductor_id, content: content, datetime: datetime, place_id: place_id, contact_name: contact_name, contact_number: contact_number, orchestra_id: orchestra_id).first_or_initialize
     concert.save
     artist_ids.each do |a_id|
       artist_id = a_id

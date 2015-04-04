@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150323180110) do
+ActiveRecord::Schema.define(version: 20150325054025) do
 
   create_table "artists", force: :cascade do |t|
     t.string   "artist_name",    limit: 255
@@ -34,7 +34,7 @@ ActiveRecord::Schema.define(version: 20150323180110) do
 
   create_table "concerts", force: :cascade do |t|
     t.string   "title",           limit: 255
-    t.time     "datetime"
+    t.datetime "datetime"
     t.integer  "place_id",        limit: 4
     t.integer  "orchestra_id",    limit: 4
     t.string   "tag",             limit: 255
@@ -72,8 +72,8 @@ ActiveRecord::Schema.define(version: 20150323180110) do
   create_table "orchestras", force: :cascade do |t|
     t.string   "orch_name",    limit: 255
     t.string   "description",  limit: 255
-    t.datetime "created_at",               null: false
-    t.datetime "updated_at",               null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
     t.string   "orch_name_en", limit: 255
   end
 
